@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/benpate/exp"
-	"github.com/benpate/rosetta/list"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -111,11 +110,21 @@ func (b Builder) evaluateField(field string, dataType string, values []string) e
 
 func parseValue(input string) (string, string) {
 
-	operator, value := list.Split(input, ":")
+	var value string
+	var operator string
 
-	if value == "" {
-		value = operator
-		operator = exp.OperatorEqual
+	if len(input) > 0 {
+		inputSlice := strings.Split(input, ":")
+
+		switch len(inputSlice) {
+		case 0:
+		case 1:
+			operator = exp.OperatorEqual
+			value = inputSlice[0]
+		default:
+			operator = inputSlice[0]
+			value = inputSlice[1]
+		}
 	}
 
 	return operator, value

@@ -47,5 +47,4 @@ func TestBuilder(t *testing.T) {
 		u, _ := url.ParseQuery("publishDate=ge:123&parentId=123456781234567812345678")
 		fmt.Println(u)
 	}
-
 }
