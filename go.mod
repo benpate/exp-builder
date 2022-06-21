@@ -1,10 +1,10 @@
-module github.com/benpate/expression-builder
+module github.com/benpate/exp-builder
 
 go 1.18
 
 require (
 	github.com/benpate/exp v0.2.0
-	github.com/benpate/rosetta v0.2.1
+	github.com/benpate/rosetta v0.2.2
 	github.com/stretchr/testify v1.7.4
 	go.mongodb.org/mongo-driver v1.9.1
 )
