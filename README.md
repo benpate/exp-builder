@@ -1,4 +1,4 @@
-# Expression Builder 👷‍♀️
+# Expression Builder 🔨
 
 [![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://pkg.go.dev/github.com/benpate/exp-builder)
 [![Build Status](https://img.shields.io/github/workflow/status/benpate/exp-builder/Go/master)](https://github.com/benpate/exp-builder/actions/workflows/go.yml)
