@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/benpate/derp"
 	"github.com/benpate/exp"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -18,26 +19,31 @@ func NewBuilder() Builder {
 	return make(Builder)
 }
 
+// String adds a string-based parameter to the expression Builder
 func (b Builder) String(name string) Builder {
 	b[name] = DataTypeString
 	return b
 }
 
+// Int adds an integer-based parameter to the expression Builder
 func (b Builder) Int(name string) Builder {
 	b[name] = DataTypeInt
 	return b
 }
 
+// Bool adds a boolean-based parameter to the expression Builder
 func (b Builder) Bool(name string) Builder {
 	b[name] = DataTypeBool
 	return b
 }
 
+// ObjectID adds a mongodb ObjectID-based parameter to the expression Builder
 func (b Builder) ObjectID(name string) Builder {
 	b[name] = DataTypeObjectID
 	return b
 }
 
+// Evaluate returns an Expression based on the specific url.Values provided
 func (b Builder) Evaluate(values url.Values) exp.Expression {
 
 	result := exp.Empty()
@@ -50,6 +56,37 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 	}
 
 	return result
+}
+
+// EvaluateAll returns an Expression that requires ALL of the values in the builder are present.
+func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
+
+	result := exp.Empty()
+
+	for field, dataType := range b {
+
+		value, ok := values[field]
+
+		if !ok {
+			return exp.Empty(), derp.NewBadRequestError("builder.MissingField", "Missing required field", field)
+		}
+
+		result = result.And(b.evaluateField(field, dataType, value))
+	}
+
+	return result, nil
+}
+
+// HasURLParams returns TRUE if the URL contains any parameters that match the Builder
+func (b Builder) HasURLParams(values url.Values) bool {
+
+	for field := range b {
+		if _, ok := values[field]; ok {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (b Builder) evaluateField(field string, dataType string, values []string) exp.Expression {
