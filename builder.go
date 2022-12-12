@@ -77,7 +77,8 @@ func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 	return result, nil
 }
 
-// HasURLParams returns TRUE if the URL contains any parameters that match the Builder
+// HasURLParams returns TRUE if the URL contains any parameters that match the Builder.
+// It does not test the validity of those values.
 func (b Builder) HasURLParams(values url.Values) bool {
 
 	for field := range b {
