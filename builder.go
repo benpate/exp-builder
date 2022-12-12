@@ -99,7 +99,7 @@ func (b Builder) evaluateField(field string, dataType string, values []string) e
 		operator = exp.Operator(operator)
 
 		var err error
-		var value interface{}
+		var value any
 
 		switch dataType {
 		case DataTypeString:
