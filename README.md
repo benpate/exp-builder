@@ -1,7 +1,7 @@
 # Expression Builder 🔨
 
 [![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://pkg.go.dev/github.com/benpate/exp-builder)
-[![Build Status](https://img.shields.io/github/workflow/status/benpate/exp-builder/Go/main)](https://github.com/benpate/exp-builder/actions/workflows/go.yml)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/benpate/exp-builder/go.yml?branch=main)](https://github.com/benpate/exp-builder/actions/workflows/go.yml)
 [![Codecov](https://img.shields.io/codecov/c/github/benpate/exp-builder.svg?style=flat-square)](https://codecov.io/gh/benpate/exp-builder)
 [![Go Report Card](https://goreportcard.com/badge/github.com/benpate/exp-builder?style=flat-square)](https://goreportcard.com/report/github.com/benpate/exp-builder)
 [![Version](https://img.shields.io/github/v/release/benpate/exp-builder?include_prereleases&style=flat-square&color=brightgreen)](https://github.com/benpate/exp-builder/releases)
