@@ -31,6 +31,12 @@ func (b Builder) Int(name string) Builder {
 	return b
 }
 
+// Int64 adds an 64-bit integer-based parameter to the expression Builder
+func (b Builder) Int64(name string) Builder {
+	b[name] = DataTypeInt64
+	return b
+}
+
 // Bool adds a boolean-based parameter to the expression Builder
 func (b Builder) Bool(name string) Builder {
 	b[name] = DataTypeBool
@@ -51,7 +57,7 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 	for field, dataType := range b {
 
 		if value, ok := values[field]; ok {
-			result = result.And(b.evaluateField(field, dataType, value))
+			result = result.And(b.EvaluateField(field, dataType, value))
 		}
 	}
 
@@ -71,7 +77,7 @@ func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 			return exp.Empty(), derp.NewBadRequestError("builder.MissingField", "Missing required field", field)
 		}
 
-		result = result.And(b.evaluateField(field, dataType, value))
+		result = result.And(b.EvaluateField(field, dataType, value))
 	}
 
 	return result, nil
@@ -90,7 +96,7 @@ func (b Builder) HasURLParams(values url.Values) bool {
 	return false
 }
 
-func (b Builder) evaluateField(field string, dataType string, values []string) exp.Expression {
+func (b Builder) EvaluateField(field string, dataType string, values []string) exp.Expression {
 
 	result := exp.Empty()
 
@@ -120,6 +126,14 @@ func (b Builder) evaluateField(field string, dataType string, values []string) e
 
 		case DataTypeInt:
 			value, err = strconv.Atoi(stringValue)
+
+			// If this is not a valid Integer, then skip this parameter
+			if err != nil {
+				continue
+			}
+
+		case DataTypeInt64:
+			value, err = strconv.ParseInt(stringValue, 10, 64)
 
 			// If this is not a valid Integer, then skip this parameter
 			if err != nil {

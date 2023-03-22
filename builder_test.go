@@ -90,6 +90,36 @@ func TestBuilder_Int(t *testing.T) {
 	}
 }
 
+func TestBuilder_Int64(t *testing.T) {
+
+	b := NewBuilder().
+		Int64("publishDate")
+
+	{
+		u, _ := url.ParseQuery("publishDate=123")
+		expect := exp.Predicate{Field: "publishDate", Operator: "=", Value: int64(123)}
+		require.Equal(t, expect, b.Evaluate(u))
+	}
+
+	{
+		u, _ := url.ParseQuery("publishDate=lt:123")
+		expect := exp.Predicate{Field: "publishDate", Operator: "<", Value: int64(123)}
+		require.Equal(t, expect, b.Evaluate(u))
+	}
+
+	{
+		u, _ := url.ParseQuery("publishDate=ge:123")
+		expect := exp.Predicate{Field: "publishDate", Operator: ">=", Value: int64(123)}
+		require.Equal(t, expect, b.Evaluate(u))
+	}
+
+	{
+		u, _ := url.ParseQuery("publishDate=Not-A-Number")
+		expect := exp.EmptyExpression{}
+		require.Equal(t, expect, b.Evaluate(u))
+	}
+}
+
 func TestBuilder_Bool(t *testing.T) {
 
 	b := NewBuilder().
