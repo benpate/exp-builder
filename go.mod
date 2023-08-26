@@ -3,7 +3,7 @@ module github.com/benpate/exp-builder
 go 1.18
 
 require (
-	github.com/benpate/derp v0.27.2
+	github.com/benpate/derp v0.28.0
 	github.com/benpate/exp v0.7.1
 	github.com/stretchr/testify v1.8.4
 	go.mongodb.org/mongo-driver v1.11.7
