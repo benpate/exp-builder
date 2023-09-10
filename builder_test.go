@@ -222,3 +222,30 @@ func TestBuilder_OMGThisSucksButImGonnaTestTheInvalidState(t *testing.T) {
 
 	require.Equal(t, exp.EmptyExpression{}, b.Evaluate(u))
 }
+
+func TestParseValue(t *testing.T) {
+
+	{
+		operator, value := parseValue("")
+		require.Equal(t, "", operator)
+		require.Equal(t, "", value)
+	}
+
+	{
+		operator, value := parseValue("SOME Value")
+		require.Equal(t, "=", operator)
+		require.Equal(t, "SOME Value", value)
+	}
+
+	{
+		operator, value := parseValue("GT:7")
+		require.Equal(t, "GT", operator)
+		require.Equal(t, "7", value)
+	}
+
+	{
+		operator, value := parseValue("GTE:7")
+		require.Equal(t, "GTE", operator)
+		require.Equal(t, "7", value)
+	}
+}
