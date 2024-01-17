@@ -216,7 +216,7 @@ func TestBuilder_OMGThisSucksButImGonnaTestTheInvalidState(t *testing.T) {
 
 	// Seriously, kids, this should never happen.  Why would you even do this?
 	b := NewBuilder()
-	b["firstName"] = "INVALID_VALUE"
+	b["firstName"] = NewField("firstName", "INVALID_VALUE")
 
 	u, _ := url.ParseQuery("firstName=John&lastName=Connor")
 
@@ -226,25 +226,25 @@ func TestBuilder_OMGThisSucksButImGonnaTestTheInvalidState(t *testing.T) {
 func TestParseValue(t *testing.T) {
 
 	{
-		operator, value := parseValue("")
+		operator, value := parseValue("", "=")
 		require.Equal(t, "", operator)
 		require.Equal(t, "", value)
 	}
 
 	{
-		operator, value := parseValue("SOME Value")
+		operator, value := parseValue("SOME Value", "=")
 		require.Equal(t, "=", operator)
 		require.Equal(t, "SOME Value", value)
 	}
 
 	{
-		operator, value := parseValue("GT:7")
+		operator, value := parseValue("GT:7", "=")
 		require.Equal(t, "GT", operator)
 		require.Equal(t, "7", value)
 	}
 
 	{
-		operator, value := parseValue("GTE:7")
+		operator, value := parseValue("GTE:7", "=")
 		require.Equal(t, "GTE", operator)
 		require.Equal(t, "7", value)
 	}

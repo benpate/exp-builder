@@ -13,39 +13,39 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Builder map[string]string
+type Builder map[string]Field
 
 func NewBuilder() Builder {
 	return make(Builder)
 }
 
 // String adds a string-based parameter to the expression Builder
-func (b Builder) String(name string) Builder {
-	b[name] = DataTypeString
+func (b Builder) String(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeString, options...)
 	return b
 }
 
 // Int adds an integer-based parameter to the expression Builder
-func (b Builder) Int(name string) Builder {
-	b[name] = DataTypeInt
+func (b Builder) Int(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeInt, options...)
 	return b
 }
 
 // Int64 adds an 64-bit integer-based parameter to the expression Builder
-func (b Builder) Int64(name string) Builder {
-	b[name] = DataTypeInt64
+func (b Builder) Int64(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeInt64, options...)
 	return b
 }
 
 // Bool adds a boolean-based parameter to the expression Builder
-func (b Builder) Bool(name string) Builder {
-	b[name] = DataTypeBool
+func (b Builder) Bool(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeBool, options...)
 	return b
 }
 
 // ObjectID adds a mongodb ObjectID-based parameter to the expression Builder
-func (b Builder) ObjectID(name string) Builder {
-	b[name] = DataTypeObjectID
+func (b Builder) ObjectID(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeObjectID, options...)
 	return b
 }
 
@@ -54,10 +54,12 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 
 	result := exp.Empty()
 
-	for field, dataType := range b {
+	for name, field := range b {
 
-		if value, ok := values[field]; ok {
-			result = result.And(b.EvaluateField(field, dataType, value))
+		if value, ok := values[name]; ok {
+			if sliceNotEmpty(value) {
+				result = result.And(b.EvaluateField(field, value))
+			}
 		}
 	}
 
@@ -69,15 +71,16 @@ func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 
 	result := exp.Empty()
 
-	for field, dataType := range b {
+	for name, field := range b {
 
-		value, ok := values[field]
-
-		if !ok {
-			return exp.Empty(), derp.NewBadRequestError("builder.MissingField", "Missing required field", field)
+		if value, ok := values[name]; ok {
+			if sliceNotEmpty(value) {
+				result = result.And(b.EvaluateField(field, value))
+				continue
+			}
 		}
 
-		result = result.And(b.EvaluateField(field, dataType, value))
+		return exp.Empty(), derp.NewBadRequestError("builder.MissingField", "Missing required field", field)
 	}
 
 	return result, nil
@@ -96,19 +99,20 @@ func (b Builder) HasURLParams(values url.Values) bool {
 	return false
 }
 
-func (b Builder) EvaluateField(field string, dataType string, values []string) exp.Expression {
+func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 	result := exp.Empty()
 
 	for _, input := range values {
 
-		operator, stringValue := parseValue(input)
+		operator, stringValue := parseValue(input, field.Operator)
 		operator = exp.Operator(operator)
 
 		var err error
 		var value any
 
-		switch dataType {
+		switch field.DataType {
+
 		case DataTypeString:
 			value = stringValue
 
@@ -153,31 +157,43 @@ func (b Builder) EvaluateField(field string, dataType string, values []string) e
 			continue
 		}
 
-		result = result.Or(exp.New(field, operator, value))
-
+		result = result.Or(exp.New(field.Name, operator, value))
 	}
 
 	return result
 }
 
-func parseValue(input string) (string, string) {
-
-	var value string
-	var operator string
+// parseValue parses a single string into an operator and a value, using the form
+// "OP:Value" -- so the string "EQ:John" will return ("=", "John").
+// If a valid operator is defined in the input, then it is returned along
+// with the remaining string as the criteria value.
+// Otherwise, the defaultOperator is used.
+func parseValue(input string, defaultOperator string) (string, string) {
 
 	if len(input) > 0 {
-		inputSlice := strings.Split(input, ":")
 
-		switch len(inputSlice) {
-		case 0:
-		case 1:
-			operator = exp.OperatorEqual
-			value = inputSlice[0]
-		default:
-			operator = inputSlice[0]
-			value = inputSlice[1]
+		// If the input contains a colon, then split it into OPERATOR and VALUE
+		if operator, value, found := strings.Cut(input, ":"); found {
+
+			if operator, ok := exp.OperatorOk(operator); ok {
+				return operator, value
+			}
+		}
+
+		// Otherwise, use the default operator argument
+		return defaultOperator, input
+	}
+
+	return "", ""
+}
+
+func sliceNotEmpty(slice []string) bool {
+
+	for _, value := range slice {
+		if len(value) > 0 {
+			return true
 		}
 	}
 
-	return operator, value
+	return false
 }
