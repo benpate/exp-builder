@@ -1,4 +1,4 @@
-package builderer
+package builder
 
 // DataTypeString is a constant that represents a string parameter
 const DataTypeString = "STRING"
