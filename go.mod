@@ -5,8 +5,8 @@ go 1.18
 require (
 	github.com/benpate/derp v0.31.0
 	github.com/benpate/exp v0.8.3
-	github.com/stretchr/testify v1.8.4
-	go.mongodb.org/mongo-driver v1.14.0
+	github.com/stretchr/testify v1.9.0
+	go.mongodb.org/mongo-driver v1.15.1
 )
 
 require (
