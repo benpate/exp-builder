@@ -255,5 +255,4 @@ func TestParseValue_FailedOperatorConversion(t *testing.T) {
 	operator, value := parseValue("GTE:7", "=")
 	require.Equal(t, ">=", operator)
 	require.Equal(t, "7", value)
-
 }
