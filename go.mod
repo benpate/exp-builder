@@ -5,9 +5,9 @@ go 1.23
 toolchain go1.23.1
 
 require (
-	github.com/benpate/derp v0.31.0
-	github.com/benpate/exp v0.8.3
-	github.com/stretchr/testify v1.9.0
+	github.com/benpate/derp v0.31.1
+	github.com/benpate/exp v0.8.4
+	github.com/stretchr/testify v1.10.0
 	go.mongodb.org/mongo-driver v1.17.1
 )
 
