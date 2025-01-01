@@ -14,6 +14,11 @@ func WithDefaultOpContains() FieldOption {
 	return WithDefaultOperator(exp.OperatorContains)
 }
 
+// WithDefaultOpBeginsWith defines "BEGINS" as the default operator to use when creating an expression.
+func WithDefaultOpBeginsWith() FieldOption {
+	return WithDefaultOperator(exp.OperatorBeginsWith)
+}
+
 // WithDefaultOperator defines the default operator to use when creating an expression
 func WithDefaultOperator(operator string) FieldOption {
 	return func(f *Field) {
