@@ -33,3 +33,9 @@ func WithAlias(name string) FieldOption {
 		f.Name = name
 	}
 }
+
+func WithFilter(filter Filter) FieldOption {
+	return func(f *Field) {
+		f.Filters = append(f.Filters, filter)
+	}
+}

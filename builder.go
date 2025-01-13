@@ -108,6 +108,11 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 		operator, stringValue := parseValue(input, field.Operator)
 		operator = exp.Operator(operator)
 
+		// Apply filters to input before comparing data types
+		for _, filter := range field.Filters {
+			stringValue = filter(stringValue)
+		}
+
 		var err error
 		var value any
 
