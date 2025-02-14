@@ -10,6 +10,7 @@ import (
 
 	"github.com/benpate/derp"
 	"github.com/benpate/exp"
+	"github.com/benpate/rosetta/convert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -19,9 +20,9 @@ func NewBuilder() Builder {
 	return make(Builder)
 }
 
-// String adds a string-based parameter to the expression Builder
-func (b Builder) String(name string, options ...FieldOption) Builder {
-	b[name] = NewField(name, DataTypeString, options...)
+// Bool adds a boolean-based parameter to the expression Builder
+func (b Builder) Bool(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeBool, options...)
 	return b
 }
 
@@ -37,15 +38,27 @@ func (b Builder) Int64(name string, options ...FieldOption) Builder {
 	return b
 }
 
-// Bool adds a boolean-based parameter to the expression Builder
-func (b Builder) Bool(name string, options ...FieldOption) Builder {
-	b[name] = NewField(name, DataTypeBool, options...)
+// Location adds a location-based parameter to the expression Builder
+func (b Builder) Location(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeLocation, options...)
 	return b
 }
 
 // ObjectID adds a mongodb ObjectID-based parameter to the expression Builder
 func (b Builder) ObjectID(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypeObjectID, options...)
+	return b
+}
+
+// String adds a string-based parameter to the expression Builder
+func (b Builder) String(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeString, options...)
+	return b
+}
+
+// Time adds a stime-based parameter to the expression Builder
+func (b Builder) Time(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeTime, options...)
 	return b
 }
 
@@ -113,92 +126,65 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 			stringValue = filter(stringValue)
 		}
 
-		var err error
-		var value any
-
 		switch field.DataType {
 
 		case DataTypeString:
-			value = stringValue
+
+			result = result.Or(exp.New(field.Name, operator, stringValue))
 
 		case DataTypeBool:
 
 			switch strings.ToLower(stringValue) {
+
 			case "true":
-				value = true
+				result = result.Or(exp.New(field.Name, operator, true))
+				continue
+
 			case "false":
-				value = false
-			default:
-				// Unrecognized values are skipped.
+				result = result.Or(exp.New(field.Name, operator, false))
 				continue
 			}
 
 		case DataTypeInt:
-			value, err = strconv.Atoi(stringValue)
 
-			// If this is not a valid Integer, then skip this parameter
-			if err != nil {
-				continue
+			if value, err := strconv.Atoi(stringValue); err == nil {
+				result = result.Or(exp.New(field.Name, operator, value))
 			}
 
 		case DataTypeInt64:
-			value, err = strconv.ParseInt(stringValue, 10, 64)
 
-			// If this is not a valid Integer, then skip this parameter
-			if err != nil {
-				continue
+			if value, err := strconv.ParseInt(stringValue, 10, 64); err == nil {
+				result = result.Or(exp.New(field.Name, operator, value))
 			}
+
+		case DataTypeLocation:
+
+			/*/ Try to parse time range statements
+			if geoPoint := parseGeoPoint(input); geoPoint.NotZero() {
+				result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
+				continue
+			}*/
 
 		case DataTypeObjectID:
-			value, err = primitive.ObjectIDFromHex(stringValue)
 
-			// If this is not a valid ObjectID, then skip this parameter
-			if err != nil {
+			if value, err := primitive.ObjectIDFromHex(stringValue); err == nil {
+				result = result.Or(exp.New(field.Name, operator, value))
+			}
+
+		case DataTypeTime:
+
+			// Try to parse time range statements
+			if beginDate, endDate := parseTimeRange(input); !beginDate.IsZero() {
+				result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
 				continue
 			}
 
-		default:
-			// Unrecognized Types are skipped.  How did you even do this?
-			continue
+			// Otherwise, parse individual time values
+			if value := convert.Time(stringValue); !value.IsZero() {
+				result = result.Or(exp.New(field.Name, operator, value))
+			}
 		}
-
-		result = result.Or(exp.New(field.Name, operator, value))
 	}
 
 	return result
-}
-
-// parseValue parses a single string into an operator and a value, using the form
-// "OP:Value" -- so the string "EQ:John" will return ("=", "John").
-// If a valid operator is defined in the input, then it is returned along
-// with the remaining string as the criteria value.
-// Otherwise, the defaultOperator is used.
-func parseValue(input string, defaultOperator string) (string, string) {
-
-	if len(input) > 0 {
-
-		// If the input contains a colon, then split it into OPERATOR and VALUE
-		if operator, value, found := strings.Cut(input, ":"); found {
-
-			if operator, ok := exp.OperatorOk(operator); ok {
-				return operator, value
-			}
-		}
-
-		// Otherwise, use the default operator argument
-		return defaultOperator, input
-	}
-
-	return "", ""
-}
-
-func sliceNotEmpty(slice []string) bool {
-
-	for _, value := range slice {
-		if len(value) > 0 {
-			return true
-		}
-	}
-
-	return false
 }

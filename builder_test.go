@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/benpate/exp"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -255,4 +256,14 @@ func TestParseValue_FailedOperatorConversion(t *testing.T) {
 	operator, value := parseValue("GTE:7", "=")
 	require.Equal(t, ">=", operator)
 	require.Equal(t, "7", value)
+}
+
+func TestEvaluateTime(t *testing.T) {
+
+	queryString, err := url.Parse("http://test.com?timeValue=past-365-days")
+	require.Nil(t, err)
+
+	b := NewBuilder().Time("timeValue")
+	result := b.Evaluate(queryString.Query())
+	spew.Dump(result)
 }
