@@ -93,7 +93,7 @@ func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 			}
 		}
 
-		return exp.Empty(), derp.NewBadRequestError("builder.MissingField", "Missing required field", field)
+		return exp.Empty(), derp.BadRequestError("builder.MissingField", "Missing required field", field)
 	}
 
 	return result, nil
