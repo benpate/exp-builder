@@ -4,6 +4,7 @@
 package builder
 
 import (
+	"math"
 	"net/url"
 	"strconv"
 	"strings"
@@ -147,14 +148,39 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 		case DataTypeInt:
 
+			// Handle magic values
+			switch stringValue {
+
+			case "MIN":
+				result = result.Or(exp.New(field.Name, operator, math.MinInt))
+				continue
+			case "MAX":
+				result = result.Or(exp.New(field.Name, operator, math.MaxInt))
+				continue
+			}
+
+			// Otherwise, try to parse the value as an integer
 			if value, err := strconv.Atoi(stringValue); err == nil {
 				result = result.Or(exp.New(field.Name, operator, value))
 			}
 
 		case DataTypeInt64:
 
+			// Handle magic values
+			switch stringValue {
+
+			case "MIN":
+				result = result.Or(exp.New(field.Name, operator, math.MinInt64))
+				continue
+			case "MAX":
+				result = result.Or(exp.New(field.Name, operator, math.MaxInt64))
+				continue
+			}
+
+			// Otherwise, try to parse the value as an int64
 			if value, err := strconv.ParseInt(stringValue, 10, 64); err == nil {
 				result = result.Or(exp.New(field.Name, operator, value))
+				continue
 			}
 
 		case DataTypeLocation:
@@ -169,6 +195,7 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 			if value, err := primitive.ObjectIDFromHex(stringValue); err == nil {
 				result = result.Or(exp.New(field.Name, operator, value))
+				continue
 			}
 
 		case DataTypeTime:
@@ -182,6 +209,7 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 			// Otherwise, parse individual time values
 			if value := convert.Time(stringValue); !value.IsZero() {
 				result = result.Or(exp.New(field.Name, operator, value))
+				continue
 			}
 		}
 	}
