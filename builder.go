@@ -185,11 +185,13 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 		case DataTypeLocation:
 
-			/*/ Try to parse time range statements
-			if geoPoint := parseGeoPoint(input); geoPoint.NotZero() {
-				result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
-				continue
-			}*/
+			/*
+				// Try to parse time range statements
+				if geoPoint := parseGeoPoint(input); geoPoint.NotZero() {
+					result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
+					continue
+				}
+			*/
 
 		case DataTypeObjectID:
 
