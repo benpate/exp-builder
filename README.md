@@ -8,7 +8,7 @@
 
 ## Safe queries from URL query strings
 
-Expression Builder works with the [exp expression library](https://github.com/benpate/exp) to define templates that are safely populated with data from a URL query string.  More documentation to come.
+Expression Builder works with the [exp expression library](https://github.com/benpate/exp) to define templates that are safely populated with data from a URL query string.
 
 ```go
 
