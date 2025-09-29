@@ -5,7 +5,7 @@ go 1.24.0
 toolchain go1.24.1
 
 require (
-	github.com/benpate/derp v0.33.0
+	github.com/benpate/derp v0.34.0
 	github.com/benpate/exp v0.8.6
 	github.com/benpate/rosetta v0.25.18
 	github.com/davecgh/go-spew v1.1.1
