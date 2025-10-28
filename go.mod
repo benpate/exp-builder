@@ -10,7 +10,7 @@ require (
 	github.com/benpate/rosetta v0.25.18
 	github.com/davecgh/go-spew v1.1.1
 	github.com/stretchr/testify v1.11.1
-	go.mongodb.org/mongo-driver v1.17.4
+	go.mongodb.org/mongo-driver v1.17.6
 )
 
 require (
