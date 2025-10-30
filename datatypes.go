@@ -18,5 +18,5 @@ const DataTypeObjectID = "OBJECTID"
 // DataTypeTime represents a time.Time parameter
 const DataTypeTime = "TIME"
 
-// DataTypeLocation represents a GeoJSON location parameter
-const DataTypeLocation = "LOCATION"
+// DataTypePolygon represents a GeoJSON location parameter
+const DataTypeGeoPolygon = "GEO-POLYGON"

@@ -39,12 +39,6 @@ func (b Builder) Int64(name string, options ...FieldOption) Builder {
 	return b
 }
 
-// Location adds a location-based parameter to the expression Builder
-func (b Builder) Location(name string, options ...FieldOption) Builder {
-	b[name] = NewField(name, DataTypeLocation, options...)
-	return b
-}
-
 // ObjectID adds a mongodb ObjectID-based parameter to the expression Builder
 func (b Builder) ObjectID(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypeObjectID, options...)
@@ -60,6 +54,12 @@ func (b Builder) String(name string, options ...FieldOption) Builder {
 // Time adds a stime-based parameter to the expression Builder
 func (b Builder) Time(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypeTime, options...)
+	return b
+}
+
+// Location adds a location-based parameter to the expression Builder
+func (b Builder) GeoPolygon(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypeGeoPolygon, options...)
 	return b
 }
 
@@ -183,15 +183,16 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 				continue
 			}
 
-		case DataTypeLocation:
+		case DataTypeGeoPolygon:
 
-			/*
-				// Try to parse time range statements
-				if geoPoint := parseGeoPoint(input); geoPoint.NotZero() {
-					result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
-					continue
-				}
-			*/
+			// Try to parse time range statements
+			if geoPolygon := parseGeoPolygon(input); len(geoPolygon) > 0 {
+				result = result.Or(exp.New(field.Name, exp.OperatorInPolygon, geoPolygon))
+				continue
+			}
+
+		// TODO: Add GeoRadius type later..
+		// case DataTypeGeoRadius:
 
 		case DataTypeObjectID:
 
