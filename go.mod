@@ -7,7 +7,7 @@ toolchain go1.24.1
 require (
 	github.com/benpate/derp v0.34.0
 	github.com/benpate/exp v0.8.7
-	github.com/benpate/rosetta v0.25.21
+	github.com/benpate/rosetta v0.25.22
 	github.com/davecgh/go-spew v1.1.1
 	github.com/stretchr/testify v1.11.1
 	go.mongodb.org/mongo-driver v1.17.6
