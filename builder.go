@@ -11,6 +11,7 @@ import (
 
 	"github.com/benpate/derp"
 	"github.com/benpate/exp"
+	"github.com/benpate/geo"
 	"github.com/benpate/rosetta/convert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -58,8 +59,8 @@ func (b Builder) Time(name string, options ...FieldOption) Builder {
 }
 
 // Location adds a location-based parameter to the expression Builder
-func (b Builder) GeoPolygon(name string, options ...FieldOption) Builder {
-	b[name] = NewField(name, DataTypeGeoPolygon, options...)
+func (b Builder) Polygon(name string, options ...FieldOption) Builder {
+	b[name] = NewField(name, DataTypePolygon, options...)
 	return b
 }
 
@@ -183,16 +184,13 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 				continue
 			}
 
-		case DataTypeGeoPolygon:
+		case DataTypePolygon:
 
 			// Try to parse time range statements
-			if geoPolygon := parseGeoPolygon(input); len(geoPolygon) > 0 {
-				result = result.Or(exp.New(field.Name, exp.OperatorInPolygon, geoPolygon))
+			if polygon := geo.NewPolygonFromString(input); polygon.NotZero() {
+				result = result.Or(exp.New(field.Name, exp.OperatorGeoWithin, polygon))
 				continue
 			}
-
-		// TODO: Add GeoRadius type later..
-		// case DataTypeGeoRadius:
 
 		case DataTypeObjectID:
 
