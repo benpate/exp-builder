@@ -175,8 +175,3 @@ func sliceNotEmpty(slice []string) bool {
 
 	return false
 }
-
-// isOdd returns TRUE if a number is odd
-func isOdd(value int) bool {
-	return value%2 > 0
-}
