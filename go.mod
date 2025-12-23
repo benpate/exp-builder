@@ -3,7 +3,7 @@ module github.com/benpate/exp-builder
 go 1.25.1
 
 require (
-	github.com/benpate/derp v0.34.0
+	github.com/benpate/derp v0.34.3
 	github.com/benpate/exp v0.9.0
 	github.com/benpate/geo v0.0.1
 	github.com/benpate/rosetta v0.25.23
