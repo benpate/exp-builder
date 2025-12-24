@@ -20,15 +20,13 @@ func TestBuilder_Strings(t *testing.T) {
 		Int("publishDate").
 		Bool("isPublished")
 
-	{
-		u, _ := url.ParseQuery("firstName=John&firstName=Sara&firstName=ne:Kyle")
-		expect := exp.OrExpression{
-			exp.Predicate{Field: "firstName", Operator: "=", Value: "John"},
-			exp.Predicate{Field: "firstName", Operator: "=", Value: "Sara"},
-			exp.Predicate{Field: "firstName", Operator: "!=", Value: "Kyle"},
-		}
-		require.Equal(t, expect, b.Evaluate(u))
+	u, _ := url.ParseQuery("firstName=John&firstName=Sara&firstName=ne:Kyle")
+	expect := exp.OrExpression{
+		exp.Predicate{Field: "firstName", Operator: "=", Value: "John"},
+		exp.Predicate{Field: "firstName", Operator: "=", Value: "Sara"},
+		exp.Predicate{Field: "firstName", Operator: "!=", Value: "Kyle"},
 	}
+	require.Equal(t, expect, b.Evaluate(u))
 }
 
 func TestBuilder_ObjectID(t *testing.T) {
@@ -43,17 +41,13 @@ func TestBuilder_ObjectID(t *testing.T) {
 		Int("publishDate").
 		Bool("isPublished")
 
-	{
-		u, _ := url.ParseQuery("parentId=123456781234567812345678")
-		expect := exp.Predicate{Field: "parentId", Operator: "=", Value: objectID}
-		require.Equal(t, expect, b.Evaluate(u))
-	}
+	value1, _ := url.ParseQuery("parentId=123456781234567812345678")
+	expect1 := exp.Predicate{Field: "parentId", Operator: "=", Value: objectID}
+	require.Equal(t, expect1, b.Evaluate(value1))
 
-	{
-		u, _ := url.ParseQuery("parentId=Not-An-ObjectID")
-		expect := exp.EmptyExpression{}
-		require.Equal(t, expect, b.Evaluate(u))
-	}
+	value2, _ := url.ParseQuery("parentId=Not-An-ObjectID")
+	expect2 := exp.EmptyExpression{}
+	require.Equal(t, expect2, b.Evaluate(value2))
 }
 
 func TestBuilder_Int(t *testing.T) {
