@@ -5,7 +5,7 @@ go 1.25.1
 require (
 	github.com/benpate/derp v0.34.0
 	github.com/benpate/exp v0.9.0
-	github.com/benpate/geo v0.0.1
+	github.com/benpate/geo v0.0.3
 	github.com/benpate/rosetta v0.25.23
 	github.com/davecgh/go-spew v1.1.1
 	github.com/stretchr/testify v1.11.1
