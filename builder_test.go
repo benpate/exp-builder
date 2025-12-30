@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/benpate/exp"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -259,5 +258,7 @@ func TestEvaluateTime(t *testing.T) {
 
 	b := NewBuilder().Time("timeValue")
 	result := b.Evaluate(queryString.Query())
-	spew.Dump(result)
+
+	require.IsType(t, exp.AndExpression{}, result)
+	require.Equal(t, 2, len(result.(exp.AndExpression)))
 }
