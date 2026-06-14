@@ -16,8 +16,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// Builder maps URL parameter names to the Fields that describe how to turn
+// their values into an expression.
 type Builder map[string]Field
 
+// NewBuilder returns an empty Builder.
 func NewBuilder() Builder {
 	return make(Builder)
 }
@@ -34,7 +37,7 @@ func (b Builder) Int(name string, options ...FieldOption) Builder {
 	return b
 }
 
-// Int64 adds an 64-bit integer-based parameter to the expression Builder
+// Int64 adds a 64-bit integer-based parameter to the expression Builder
 func (b Builder) Int64(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypeInt64, options...)
 	return b
@@ -52,13 +55,13 @@ func (b Builder) String(name string, options ...FieldOption) Builder {
 	return b
 }
 
-// Time adds a stime-based parameter to the expression Builder
+// Time adds a time-based parameter to the expression Builder
 func (b Builder) Time(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypeTime, options...)
 	return b
 }
 
-// Location adds a location-based parameter to the expression Builder
+// Polygon adds a GeoJSON polygon-based parameter to the expression Builder
 func (b Builder) Polygon(name string, options ...FieldOption) Builder {
 	b[name] = NewField(name, DataTypePolygon, options...)
 	return b
@@ -114,6 +117,8 @@ func (b Builder) HasURLParams(values url.Values) bool {
 	return false
 }
 
+// EvaluateField converts the raw URL values for a single field into an
+// expression, parsing each value according to the field's data type.
 func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 	result := exp.Empty()
