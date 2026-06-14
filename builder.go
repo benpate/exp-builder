@@ -167,14 +167,16 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 		case DataTypeInt64:
 
-			// Handle magic values
+			// Handle magic values. The explicit int64 conversions keep these
+			// consistent with the strconv.ParseInt path below (and avoid an
+			// int overflow on 32-bit platforms).
 			switch stringValue {
 
 			case "MIN":
-				result = result.Or(exp.New(field.Name, operator, math.MinInt64))
+				result = result.Or(exp.New(field.Name, operator, int64(math.MinInt64)))
 				continue
 			case "MAX":
-				result = result.Or(exp.New(field.Name, operator, math.MaxInt64))
+				result = result.Or(exp.New(field.Name, operator, int64(math.MaxInt64)))
 				continue
 			}
 
