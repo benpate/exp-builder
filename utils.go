@@ -168,6 +168,7 @@ func parseValue(input string, defaultOperator string) (string, string) {
 	return "", ""
 }
 
+// sliceNotEmpty returns TRUE if the slice contains at least one non-empty string.
 func sliceNotEmpty(slice []string) bool {
 
 	for _, value := range slice {
