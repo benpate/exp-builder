@@ -69,3 +69,26 @@ func TestWithAlias_AppliedDuringEvaluate(t *testing.T) {
 	expect := exp.Predicate{Field: "databaseName", Operator: "=", Value: "John"}
 	require.Equal(t, expect, b.Evaluate(u))
 }
+
+func TestWithFilter_AppliedInOrderDuringEvaluate(t *testing.T) {
+	// Filters run in the order they were added: trim first, then upper-case.
+	// "  john doe  " -> "john doe" -> "JOHN DOE".
+	b := NewBuilder().String("name",
+		WithFilter(strings.TrimSpace),
+		WithFilter(strings.ToUpper),
+	)
+
+	u, _ := url.ParseQuery("name=" + url.QueryEscape("  john doe  "))
+	expect := exp.Predicate{Field: "name", Operator: "=", Value: "JOHN DOE"}
+	require.Equal(t, expect, b.Evaluate(u))
+}
+
+func TestWithFilter_AppliedAfterOperatorSplit(t *testing.T) {
+	// The filter transforms the VALUE only; the operator prefix is stripped by
+	// parseValue before filtering, so "ne:john" -> operator "!=", value "JOHN".
+	b := NewBuilder().String("name", WithFilter(strings.ToUpper))
+
+	u, _ := url.ParseQuery("name=ne:john")
+	expect := exp.Predicate{Field: "name", Operator: "!=", Value: "JOHN"}
+	require.Equal(t, expect, b.Evaluate(u))
+}

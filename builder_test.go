@@ -346,6 +346,161 @@ func TestBuilder_Polygon_Invalid(t *testing.T) {
 	require.Equal(t, exp.EmptyExpression{}, b.Evaluate(u))
 }
 
+func TestBuilder_Evaluate_MultipleFields(t *testing.T) {
+
+	b := NewBuilder().
+		String("firstName").
+		Int("age")
+
+	u, _ := url.ParseQuery("firstName=John&age=42")
+	result := b.Evaluate(u)
+
+	// Two distinct present fields are combined with AND. Map iteration order is
+	// random, so assert on membership rather than position.
+	and, ok := result.(exp.AndExpression)
+	require.True(t, ok, "expected AndExpression, got %T", result)
+	require.Equal(t, 2, len(and))
+	require.Contains(t, and, exp.Predicate{Field: "firstName", Operator: "=", Value: "John"})
+	require.Contains(t, and, exp.Predicate{Field: "age", Operator: "=", Value: 42})
+}
+
+func TestBuilder_Evaluate_SkipsAbsentAndEmpty(t *testing.T) {
+
+	b := NewBuilder().
+		String("firstName").
+		String("lastName")
+
+	// "lastName" is present but empty, "firstName" is present with a value, and
+	// "unknown" is not in the Builder. Only "firstName" contributes a predicate.
+	u, _ := url.ParseQuery("firstName=John&lastName=&unknown=x")
+	result := b.Evaluate(u)
+
+	expect := exp.Predicate{Field: "firstName", Operator: "=", Value: "John"}
+	require.Equal(t, expect, result)
+}
+
+func TestBuilder_Evaluate_Empty(t *testing.T) {
+
+	// A Builder with no matching URL params returns the empty expression.
+	b := NewBuilder().String("firstName")
+
+	u, _ := url.ParseQuery("other=value")
+	require.Equal(t, exp.EmptyExpression{}, b.Evaluate(u))
+}
+
+func TestBuilder_EvaluateField_MultipleValues_Or(t *testing.T) {
+
+	// Multiple values for a single Int field combine with OR (each value parsed
+	// independently). This exercises the Or-combination path for a non-string type.
+	b := NewBuilder().Int("age")
+
+	u, _ := url.ParseQuery("age=10&age=20&age=lt:5")
+	result := b.Evaluate(u)
+
+	expect := exp.OrExpression{
+		exp.Predicate{Field: "age", Operator: "=", Value: 10},
+		exp.Predicate{Field: "age", Operator: "=", Value: 20},
+		exp.Predicate{Field: "age", Operator: "<", Value: 5},
+	}
+	require.Equal(t, expect, result)
+}
+
+func TestBuilder_EvaluateField_MixedValidInvalid(t *testing.T) {
+
+	// When one value parses and another does not, only the valid one produces a
+	// predicate -- collapsing to a single Predicate rather than an OrExpression.
+	b := NewBuilder().Int("age")
+
+	u, _ := url.ParseQuery("age=42&age=not-a-number")
+	result := b.Evaluate(u)
+
+	expect := exp.Predicate{Field: "age", Operator: "=", Value: 42}
+	require.Equal(t, expect, result)
+}
+
+func TestBuilder_Bool_CaseInsensitive(t *testing.T) {
+
+	// Bool parsing lower-cases the input, so mixed/upper case still matches.
+	b := NewBuilder().Bool("flag")
+
+	run := func(query string, expected bool) {
+		u, _ := url.ParseQuery(query)
+		expect := exp.Predicate{Field: "flag", Operator: "=", Value: expected}
+		require.Equal(t, expect, b.Evaluate(u), query)
+	}
+
+	run("flag=TRUE", true)
+	run("flag=True", true)
+	run("flag=FALSE", false)
+	run("flag=False", false)
+}
+
+func TestBuilder_Polygon_ParsesRawInput(t *testing.T) {
+
+	// Polygon is the one data type that parses the RAW input rather than the
+	// operator-stripped stringValue, and always emits OperatorGeoWithin. geo's
+	// parser coerces the unparseable "lt:1" token to 0 instead of rejecting it,
+	// so "lt:1,2,3,4" yields coordinates (0,2),(3,4). This pins that behavior.
+	b := NewBuilder().Polygon("location")
+
+	u, _ := url.ParseQuery("location=lt:1,2,3,4")
+	result := b.Evaluate(u)
+
+	expect := exp.Predicate{
+		Field:    "location",
+		Operator: exp.OperatorGeoWithin,
+		Value:    geo.NewPolygonFromString("lt:1,2,3,4"),
+	}
+	require.Equal(t, expect, result)
+}
+
+func TestBuilder_ObjectID_MultipleValues_Or(t *testing.T) {
+
+	id1, _ := primitive.ObjectIDFromHex("123456781234567812345678")
+	id2, _ := primitive.ObjectIDFromHex("aabbccddeeff001122334455")
+
+	b := NewBuilder().ObjectID("parentId")
+
+	u, _ := url.ParseQuery("parentId=123456781234567812345678&parentId=aabbccddeeff001122334455")
+	result := b.Evaluate(u)
+
+	expect := exp.OrExpression{
+		exp.Predicate{Field: "parentId", Operator: "=", Value: id1},
+		exp.Predicate{Field: "parentId", Operator: "=", Value: id2},
+	}
+	require.Equal(t, expect, result)
+}
+
+func TestBuilder_EvaluateAll_MultipleRequiredFields(t *testing.T) {
+
+	b := NewBuilder().
+		String("firstName").
+		String("lastName")
+
+	// All required fields present: the result ANDs both predicates.
+	u, _ := url.ParseQuery("firstName=John&lastName=Connor")
+	result, err := b.EvaluateAll(u)
+	require.Nil(t, err)
+
+	and, ok := result.(exp.AndExpression)
+	require.True(t, ok, "expected AndExpression, got %T", result)
+	require.Equal(t, 2, len(and))
+	require.Contains(t, and, exp.Predicate{Field: "firstName", Operator: "=", Value: "John"})
+	require.Contains(t, and, exp.Predicate{Field: "lastName", Operator: "=", Value: "Connor"})
+}
+
+func TestBuilder_EvaluateAll_PresentButEmptyFails(t *testing.T) {
+
+	// A required field that is present but empty fails EvaluateAll, just like an
+	// absent one.
+	b := NewBuilder().String("firstName")
+
+	u, _ := url.ParseQuery("firstName=")
+	result, err := b.EvaluateAll(u)
+	require.NotNil(t, err)
+	require.Equal(t, exp.EmptyExpression{}, result)
+}
+
 // FuzzBuilderEvaluate throws arbitrary query strings at a Builder containing
 // every supported data type. The parser must never panic, and Evaluate must
 // always return a usable (non-nil) Expression.
@@ -393,5 +548,41 @@ func FuzzBuilderEvaluate(f *testing.F) {
 
 		// EvaluateAll walks the same parsing paths and must also never panic.
 		_, _ = b.EvaluateAll(values)
+	})
+}
+
+// FuzzEvaluateField feeds arbitrary raw values into every data type's parsing
+// path. Each parser (int, int64, bool, ObjectID, time, polygon) must tolerate
+// hostile input without panicking, and EvaluateField must always return a
+// non-nil Expression.
+func FuzzEvaluateField(f *testing.F) {
+
+	seeds := []string{
+		"", "123", "lt:5", "MIN", "MAX", "true", "FALSE",
+		"123456781234567812345678", "not-an-id",
+		"2020-01-02", "past-30-days", "garbage",
+		"1,2,3,4", "lt:1,2", ":", "EQ:", "ne:",
+	}
+	for _, seed := range seeds {
+		f.Add(seed)
+	}
+
+	dataTypes := []string{
+		DataTypeString, DataTypeInt, DataTypeInt64, DataTypeBool,
+		DataTypeObjectID, DataTypeTime, DataTypePolygon,
+	}
+
+	b := NewBuilder()
+
+	f.Fuzz(func(t *testing.T, value string) {
+
+		// Run the same raw value through each data type's parser.
+		for _, dataType := range dataTypes {
+			field := NewField("field", dataType)
+
+			// Must never panic and must always return a usable Expression.
+			result := b.EvaluateField(field, []string{value})
+			require.NotNil(t, result, "dataType=%q value=%q", dataType, value)
+		}
 	})
 }
