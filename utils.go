@@ -7,6 +7,9 @@ import (
 	"github.com/benpate/exp"
 )
 
+// parseTimeRange maps a named relative range (e.g. "today", "past-30-days",
+// "this-month") to its [begin, end) time pair, anchored to midnight UTC. An
+// unrecognized value returns two zero times.
 func parseTimeRange(value string) (time.Time, time.Time) {
 
 	switch value {
