@@ -70,7 +70,7 @@ func (b Builder) Polygon(name string, options ...FieldOption) Builder {
 // Evaluate returns an Expression based on the specific url.Values provided
 func (b Builder) Evaluate(values url.Values) exp.Expression {
 
-	result := exp.Empty()
+	var result exp.Expression = exp.Empty()
 
 	for name, field := range b {
 
@@ -87,7 +87,7 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 // EvaluateAll returns an Expression that requires ALL of the values in the builder are present.
 func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 
-	result := exp.Empty()
+	var result exp.Expression = exp.Empty()
 
 	for name, field := range b {
 
@@ -121,7 +121,7 @@ func (b Builder) HasURLParams(values url.Values) bool {
 // expression, parsing each value according to the field's data type.
 func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
-	result := exp.Empty()
+	var result exp.Expression = exp.Empty()
 
 	for _, input := range values {
 
