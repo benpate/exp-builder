@@ -193,8 +193,9 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 		case DataTypePolygon:
 
-			// Try to parse time range statements
-			if polygon := geo.NewPolygonFromString(input); polygon.NotZero() {
+			// Parse the operator-stripped stringValue (consistent with every other
+			// data type) so an "OP:" prefix never leaks into the coordinate parser.
+			if polygon := geo.NewPolygonFromString(stringValue); polygon.NotZero() {
 				result = result.Or(exp.New(field.Name, exp.OperatorGeoWithin, polygon))
 				continue
 			}

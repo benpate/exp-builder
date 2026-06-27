@@ -435,21 +435,20 @@ func TestBuilder_Bool_CaseInsensitive(t *testing.T) {
 	run("flag=False", false)
 }
 
-func TestBuilder_Polygon_ParsesRawInput(t *testing.T) {
+func TestBuilder_Polygon_StripsOperatorPrefix(t *testing.T) {
 
-	// Polygon is the one data type that parses the RAW input rather than the
-	// operator-stripped stringValue, and always emits OperatorGeoWithin. geo's
-	// parser coerces the unparseable "lt:1" token to 0 instead of rejecting it,
-	// so "lt:1,2,3,4" yields coordinates (0,2),(3,4). This pins that behavior.
+	// An "OP:" prefix is stripped before the coordinates are parsed (consistent
+	// with every other data type), and Polygon always emits OperatorGeoWithin.
+	// So "eq:1,2,3,4" parses the same coordinates as "1,2,3,4".
 	b := NewBuilder().Polygon("location")
 
-	u, _ := url.ParseQuery("location=lt:1,2,3,4")
+	u, _ := url.ParseQuery("location=eq:1,2,3,4")
 	result := b.Evaluate(u)
 
 	expect := exp.Predicate{
 		Field:    "location",
 		Operator: exp.OperatorGeoWithin,
-		Value:    geo.NewPolygonFromString("lt:1,2,3,4"),
+		Value:    geo.NewPolygonFromString("1,2,3,4"),
 	}
 	require.Equal(t, expect, result)
 }
