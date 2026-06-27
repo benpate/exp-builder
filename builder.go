@@ -84,7 +84,8 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 	return result
 }
 
-// EvaluateAll returns an Expression that requires ALL of the values in the builder are present.
+// EvaluateAll is like Evaluate, but every field defined in the Builder must be
+// present and non-empty in the URL values. It returns an error if any is missing.
 func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 
 	var result exp.Expression = exp.Empty()
