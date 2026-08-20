@@ -1,6 +1,6 @@
 # Expression Builder 🔨
 
-[![GoDoc](https://img.shields.io/badge/go-documentation-blue.svg?style=flat-square)](http://pkg.go.dev/github.com/benpate/exp-builder)
+[![Go Reference](https://pkg.go.dev/badge/github.com/benpate/exp-builder.svg)](https://pkg.go.dev/github.com/benpate/exp-builder)
 [![Version](https://img.shields.io/github/v/release/benpate/exp-builder?include_prereleases&style=flat-square&color=brightgreen)](https://github.com/benpate/exp-builder/releases)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/benpate/exp-builder/go.yml?style=flat-square)](https://github.com/benpate/exp-builder/actions/workflows/go.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/benpate/exp-builder?style=flat-square)](https://goreportcard.com/report/github.com/benpate/exp-builder)
@@ -40,16 +40,31 @@ By default each parameter is compared with `=`. A query value may override this 
 
 A field's default operator can also be set in code with `WithDefaultOperator` (and the `WithDefaultOp*` shortcuts). Repeating a parameter (`?firstName=a&firstName=b`) combines the values with OR; distinct parameters combine with AND.
 
-## What matters here
+## Time Ranges
 
-- **The `OP:value` prefix is the core feature, and it is invisible from the constructor API.** Only the first `:` splits operator from value, so `EQ:a:b:c` parses as `=` / `a:b:c`. An unrecognized operator prefix is *not* an error — the default operator is used and the whole string (prefix included) becomes the value.
+A `Time` parameter accepts a timestamp, or the name of a relative range that expands to a half-open `[begin, end)` pair anchored to midnight UTC:
 
-- **Only allow-listed fields produce predicates.** `Evaluate` ignores any URL parameter whose name was not registered on the Builder, and silently drops values that fail to parse for their data type. This is the safety guarantee — unknown or malformed input never reaches the expression.
+```
+?date=today          ?date=yesterday      ?date=tomorrow
+?date=this-week      ?date=next-week
+?date=last-month     ?date=this-month     ?date=next-month
+?date=last-year      ?date=this-year      ?date=next-year
+?date=past-30-days   ?date=next-90-days   ...and the other 30/60/90/180/365 variants
+```
 
-- **`Polygon` ignores the operator prefix and always emits `GEO-WITHIN`.** Unlike every other type, the parsed operator is discarded for polygons. The prefix *is* stripped before parsing the coordinates (so `eq:1,2,3,4` works), but the comparison operator is fixed.
+## What Doesn't Reach the Database
 
-- **`Evaluate` vs. `EvaluateAll`.** `Evaluate` includes only the fields present in the URL; `EvaluateAll` requires *every* registered field to be present and non-empty, returning an error otherwise.
+Anything you didn't ask for. A parameter that was never registered on the Builder is ignored, a value that won't parse as its declared data type is dropped, and an empty value never becomes a predicate — a `CONTAINS ""` comparison would match every record, so a blank parameter can't be used to widen a query.
+
+That guarantee covers the *shape* of the query, not who is allowed to run it. Combine the result with your own access rules:
+
+```go
+criteria := exp.And(
+	b.Evaluate(r.URL.Query()),
+	exp.Equal("ownerId", currentUser.ID),
+)
+```
 
 ## Pull Requests Welcome
 
-This library is a work in progress, and will benefit from your experience reports, use cases, and contributions.  If you have an idea for making this library better, send in a pull request.  We're all in this together! 🔨
+This library is a work in progress, and will benefit from your experience reports, use cases, and contributions. If you have an idea for making this library better, send in a pull request. We're all in this together! 🔨
