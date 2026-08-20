@@ -1,11 +1,10 @@
-// Package builder generates dynamic expressions based on a set of url.Values and a map of allowed fields.
-// It supports several different data types, along with a simple list of operators that can be applied to
-// each predicate.
 package builder
 
 import (
+	"maps"
 	"math"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -67,20 +66,25 @@ func (b Builder) Polygon(name string, options ...FieldOption) Builder {
 	return b
 }
 
-// Evaluate returns an Expression based on the specific url.Values provided
+// Evaluate returns an Expression built from the url.Values provided, using only
+// the parameters that this Builder declares. Everything else is ignored.
 func (b Builder) Evaluate(values url.Values) exp.Expression {
 
 	var result exp.Expression = exp.Empty()
 
-	for name, field := range b {
+	// Fields are visited in name order so that the same URL always produces the
+	// same expression.  Ranging a map directly would shuffle the predicates on
+	// every call, which changes the query shape the database sees.
+	for _, name := range slices.Sorted(maps.Keys(b)) {
 
 		if value, ok := values[name]; ok {
 			if sliceNotEmpty(value) {
-				result = result.And(b.EvaluateField(field, value))
+				result = result.And(b.EvaluateField(b[name], value))
 			}
 		}
 	}
 
+	// Nothing but the parameters we asked for
 	return result
 }
 
@@ -88,25 +92,33 @@ func (b Builder) Evaluate(values url.Values) exp.Expression {
 // present and non-empty in the URL values. It returns an error if any is missing.
 func (b Builder) EvaluateAll(values url.Values) (exp.Expression, error) {
 
+	const location = "builder.Builder.EvaluateAll"
+
 	var result exp.Expression = exp.Empty()
 
-	for name, field := range b {
+	// Sorted for the same reason as Evaluate, and so that a request missing
+	// several fields always reports the same one instead of a random pick.
+	for _, name := range slices.Sorted(maps.Keys(b)) {
 
 		if value, ok := values[name]; ok {
 			if sliceNotEmpty(value) {
-				result = result.And(b.EvaluateField(field, value))
+				result = result.And(b.EvaluateField(b[name], value))
 				continue
 			}
 		}
 
-		return exp.Empty(), derp.BadRequest("builder.MissingField", "Missing required field", field)
+		// The detail is the field NAME, not the Field: a Field carries filter
+		// functions, which cannot be marshaled into a JSON error response.
+		return exp.Empty(), derp.BadRequest(location, "Missing required field", name)
 	}
 
+	// All present and accounted for
 	return result, nil
 }
 
-// HasURLParams returns TRUE if the URL contains any parameters that match the Builder.
-// It does not test the validity of those values.
+// HasURLParams returns TRUE if the URL contains any parameters that match the
+// Builder. It tests only for the parameter's presence, so a blank or unparseable
+// value still counts here while Evaluate would discard it.
 func (b Builder) HasURLParams(values url.Values) bool {
 
 	for field := range b {
@@ -115,6 +127,7 @@ func (b Builder) HasURLParams(values url.Values) bool {
 		}
 	}
 
+	// Nobody here but us chickens
 	return false
 }
 
@@ -126,6 +139,7 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 	for _, input := range values {
 
+		// Split an "OP:" prefix off the front of the value
 		operator, stringValue := parseValue(input, field.Operator)
 		operator = exp.Operator(operator)
 
@@ -134,6 +148,14 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 			stringValue = filter(stringValue)
 		}
 
+		// An empty value is a legitimate comparison: a field that may be unset is
+		// queried as (field == "") OR (field == "VALUE").  See BUG-131 for the
+		// case AGAINST this -- a filter that empties a value turns "CONTAINS" into
+		// a match on every record -- which is unresolved, and deliberately not
+		// guarded against here.
+		//
+		// Convert the value into the field's data type, and add it to the result.
+		// A value that will not convert is dropped without complaint.
 		switch field.DataType {
 
 		case DataTypeString:
@@ -210,9 +232,11 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 
 		case DataTypeTime:
 
-			// Try to parse time range statements
-			if beginDate, endDate := parseTimeRange(input); !beginDate.IsZero() {
-				result = result.Or(exp.New(field.Name, ">=", beginDate).And(exp.New(field.Name, "<", endDate)))
+			// Try to parse time range statements.  A named range supplies its own
+			// begin/end comparisons, so -- exactly like a Polygon -- any operator
+			// prefix is stripped first and then discarded.
+			if beginDate, endDate := parseTimeRange(stringValue); !beginDate.IsZero() {
+				result = result.Or(exp.New(field.Name, exp.OperatorGreaterOrEqual, beginDate).And(exp.New(field.Name, exp.OperatorLessThan, endDate)))
 				continue
 			}
 
@@ -224,5 +248,6 @@ func (b Builder) EvaluateField(field Field, values []string) exp.Expression {
 		}
 	}
 
+	// One field, however many values it brought along
 	return result
 }

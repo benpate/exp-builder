@@ -25,5 +25,6 @@ func NewField(name string, dataType string, options ...FieldOption) Field {
 		option(&result)
 	}
 
+	// Fully dressed and ready to go
 	return result
 }

@@ -4,7 +4,7 @@
 
 - **Only allow-listed fields produce predicates.** `Evaluate` ignores any URL parameter whose name was not registered on the Builder, and silently drops values that fail to parse for their data type. This is the safety guarantee — unknown or malformed input never reaches the expression. It is a guarantee about *shape*, not about authorization: callers still have to `exp.And` their own access rules on top.
 
-- **An empty value never becomes a predicate.** `sliceNotEmpty` skips a parameter whose values are all blank, and `EvaluateField` skips each individual value that is empty *after* filtering. Both guards matter: a `CONTAINS ""` predicate matches every record, so a blank value that slipped through would widen the query rather than narrow it. `EXISTS` is the single exception, because it tests for the field and not for a value.
+- **An empty value IS a predicate, deliberately.** `(field == "") || (field == "VALUE")` is how you query a field that may be unset, so `EvaluateField` keeps blank values. Only `Evaluate`'s `sliceNotEmpty` check skips a parameter, and only when *every* one of its values is blank. A guard that dropped empty values was written and removed — do not re-add it without reading BUG-131, which covers the unresolved case against it: a `WithFilter` that empties a value yields `CONTAINS ""`, which matches every record.
 
 - **`Polygon` and named time ranges ignore the operator prefix.** Both strip the prefix before parsing (so `eq:1,2,3,4` and `gt:today` work), then discard it: a Polygon always emits `GEO-WITHIN`, and a named range always emits its own `>= begin AND < end` pair. Every other data type honors the parsed operator.
 

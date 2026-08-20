@@ -54,7 +54,9 @@ A `Time` parameter accepts a timestamp, or the name of a relative range that exp
 
 ## What Doesn't Reach the Database
 
-Anything you didn't ask for. A parameter that was never registered on the Builder is ignored, a value that won't parse as its declared data type is dropped, and an empty value never becomes a predicate — a `CONTAINS ""` comparison would match every record, so a blank parameter can't be used to widen a query.
+Anything you didn't ask for. A parameter that was never registered on the Builder is ignored, and a value that won't parse as its declared data type is dropped.
+
+An *empty* value is kept, because it is a real comparison — `(field == "") || (field == "VALUE")` is how you ask for "unset, or this". Be aware of what that means when you attach a `WithFilter`: if your filter can return an empty string, the comparison becomes an empty one, and with `CONTAINS` that matches every record.
 
 That guarantee covers the *shape* of the query, not who is allowed to run it. Combine the result with your own access rules:
 

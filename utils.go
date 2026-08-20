@@ -141,6 +141,7 @@ func parseTimeRange(value string) (time.Time, time.Time) {
 		return beginDate, endDate
 	}
 
+	// Not a range we know -- the caller will try to read it as a timestamp
 	return time.Time{}, time.Time{}
 }
 
@@ -165,6 +166,7 @@ func parseValue(input string, defaultOperator string) (string, string) {
 		return defaultOperator, input
 	}
 
+	// Nothing in, nothing out
 	return "", ""
 }
 
@@ -177,5 +179,6 @@ func sliceNotEmpty(slice []string) bool {
 		}
 	}
 
+	// All quiet on the western front
 	return false
 }
