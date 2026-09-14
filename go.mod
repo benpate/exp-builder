@@ -8,7 +8,7 @@ require (
 	github.com/benpate/geo v0.2.0
 	github.com/benpate/rosetta v0.35.0
 	github.com/stretchr/testify v1.12.1
-	go.mongodb.org/mongo-driver v1.17.9
+	go.mongodb.org/mongo-driver v1.17.10
 )
 
 require (
